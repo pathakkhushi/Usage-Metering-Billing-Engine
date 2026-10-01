@@ -1,0 +1,23 @@
+# Manifest read by the evaluator
+name: flyrank-capstone-metering-billing
+run: ./run.sh                      # applies Alembic migrations, then serves on :8000
+seed: python -m scripts.seed       # demo tenants + keys (run after the server has migrated the DB once)
+test: python -m pytest             # optional: 30 deterministic tests, ~3s
+base_url: http://localhost:8000
+env:
+  ADMIN_TOKEN: demo-admin
+  STRIPE_WEBHOOK_SECRET: whsec_demo_secret
+auth:
+  header: X-API-Key
+  demo_keys:
+    free: demo_key_acme_free_0000000000000000
+    pro: demo_key_globex_pro_0000000000000000
+endpoints:
+  - { method: GET,  path: /health }
+  - { method: POST, path: /tenants,          note: "X-Admin-Token required" }
+  - { method: POST, path: /generate,         note: "X-API-Key + Idempotency-Key headers; the dummy billable endpoint" }
+  - { method: GET,  path: /usage,            note: "used / limit / cost for the current month" }
+  - { method: GET,  path: /usage/events }
+  - { method: POST, path: /billing/checkout }
+  - { method: POST, path: /webhooks/stripe,  note: "Stripe-Signature verified; forged -> 400" }
+probes: scripts/demo_probes.sh     # reproduces the 5 acceptance probes
